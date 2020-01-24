@@ -51,28 +51,31 @@ module.exports = {
   },
 
   async update(request, response) {
-    let id = request.params.id
-    const dev = await Dev.findOne({ _id: id })
-    
+    const _id = request.params.id
+    const { github_username, techs, location } = request.body
+
+    const dev = await Dev.findOne({ _id })
     if (!dev) {
       return response.status(400).send('Registro não encontrado!')
     }
-
-    const { name, avatar_url, bio, techs, latitude, longitude } = request.body
+    
+    const apiResponse = await axios.get(`https://api.github.com/users/${github_username}`)
+    const { name = login, avatar_url, bio } = apiResponse.data
     const techsArray = parseStringAsArray(techs) 
-
-    const location = {
+    
+    const position = {
       type: 'Point',
-      coordinates: [longitude, latitude]
+      coordinates: location.coordinates
     }
-
+    
     const devData = new Dev({
-      _id: id,
+      _id,
+      github_username,
       name,
       avatar_url,
       bio,
-      location,
-      techs: techsArray
+      techs: techsArray,
+      location: position,
     })
     
     await Dev.updateOne(dev, devData)
