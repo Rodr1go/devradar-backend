@@ -5,9 +5,17 @@ const { findConnections, sendMessage } = require('../websocket')
 
 module.exports = {
   async index(request, response) {
-    const devs = await Dev.find()
+    const page = parseInt(request.query.page || 1);
+    const limit = parseInt(request.query.limit || 4);
+    
+    try {
+      const devs = await Dev.find({}).sort('name').skip(limit * (page - 1)).limit(limit);
+      const count = await Dev.find({}).countDocuments();
 
-    return response.json(devs)
+      return response.status(200).json({devs, count})
+    } catch (error) {
+      return response.status(500).json({ message: error})
+    }
   },
 
   async store(request, response) {
